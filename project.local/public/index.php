@@ -1,5 +1,13 @@
 <?php
-    $newUrl = '';
+require './vendor/autoload.php';
+
+use Embed\Embed;
+use Embed\Http\Crawler;
+use Embed\Http\CurlClient;
+use Nyholm\Psr7\Factory\Psr17Factory;
+
+$newUrl = '';
+$info = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $original_url = $_POST['original_url'];
@@ -19,6 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([':original_url' => $original_url, ':short_code' => $short_code]);
         
         $newUrl = "Сокращенная ссылка: <a href=\"/{$short_code}\">http://project.local/{$short_code}</a>";
+        
+        // Получение информации о сайте
+        $psr17Factory = new Psr17Factory();
+        $httpClient = new CurlClient();
+        $crawler = new Crawler($httpClient, $psr17Factory, $psr17Factory);
+        $embed = new Embed($crawler);
+
+        try {
+            $info = $embed->get($original_url);
+        } catch (Exception $e) {
+            echo "Ошибка: " . $e->getMessage();
+        }
     } 
     catch (PDOException $e) {
         echo "Error: " . $e->getMessage();
@@ -39,17 +59,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="row">
                 <div class="main_text"><h1>Сокращатель ссылок</h1></div>
                 <form method="POST" action="">
-                <div class="input-group mb-3">
-                    <!-- <label for="original_url">Введите оригинальную ссылку:</label> -->
-                    <input class="col-4 form-control" aria-label="Large" aria-describedby="inputGroup-sizing-sm" placeholder="Введите исходную ссылку:" type="text" id="original_url" name="original_url" required>
-                    <div class="input-group-append">
-                    <button type="submit" class="btn btn-secondary">Сократить</button>
-                </div>
-                    <br>
+                    <div class="input-group mb-3">
+                        <input class="col-4 form-control" aria-label="Large" aria-describedby="inputGroup-sizing-sm" placeholder="Введите исходную ссылку:" type="text" id="original_url" name="original_url" required>
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-secondary">Сократить</button>
+                        </div>
+                        <br>
+                    </div>
                 </form>
             </div>
         
             <h1><?php echo $newUrl; ?></h1>
+
+            <?php if ($info): ?>
+                <div class="mt-5">
+                    <h2><strong>Title:</strong> <?php echo $info->title; ?></h2>
+                    <p><strong>Description:</strong> <?php echo $info->description; ?></p>
+                    <?php if ($info->image): ?>
+                        <img src="<?php echo $info->image; ?>" alt="Image" class="img-fluid">
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
         </div>
     </div>
