@@ -16,4 +16,5 @@ return array(
     'GuzzleHttp\\' => array($vendorDir . '/guzzlehttp/guzzle/src'),
     'Embed\\' => array($vendorDir . '/embed/embed/src'),
     'Composer\\CaBundle\\' => array($vendorDir . '/composer/ca-bundle/src'),
+    'App\\' => array($baseDir . '/src'),
 );

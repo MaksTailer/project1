@@ -1,48 +1,19 @@
 <?php
 require './vendor/autoload.php';
 
-use Embed\Embed;
-use Embed\Http\Crawler;
-use Embed\Http\CurlClient;
-use Nyholm\Psr7\Factory\Psr17Factory;
+use App\UrlShortener;
 
 $newUrl = '';
 $info = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $original_url = $_POST['original_url'];
-    $short_code = substr(md5(uniqid(rand(), true)), 0, 6);
+    $originalUrl = $_POST['original_url'];
+    $urlShortener = new UrlShortener();
+    $shortCode = $urlShortener->shortenUrl($originalUrl);
 
-    $host = 'localhost';
-    $port = '5432';
-    $dbname = 'testdb';
-    $user = 'myuser';
-    $password = '1111';
-
-    $dsn = "pgsql:host=$host;port=$port;dbname=$dbname;";
-
-    try {
-        $pdo = new PDO($dsn, $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-        $stmt = $pdo->prepare("INSERT INTO links (original_url, short_code) VALUES (:original_url, :short_code)");
-        $stmt->execute([':original_url' => $original_url, ':short_code' => $short_code]);
-        
-        $newUrl = "Сокращенная ссылка: <a href=\"/{$short_code}\">http://project.local/{$short_code}</a>";
-        
-        // Получение информации о сайте
-        $psr17Factory = new Psr17Factory();
-        $httpClient = new CurlClient();
-        $crawler = new Crawler($httpClient, $psr17Factory, $psr17Factory);
-        $embed = new Embed($crawler);
-
-        try {
-            $info = $embed->get($original_url);
-        } catch (Exception $e) {
-            echo "Ошибка: " . $e->getMessage();
-        }
-    } 
-    catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
-    }
+    $newUrl = "Сокращенная ссылка: <a href=\"/{$shortCode}\">http://project.local/{$shortCode}</a>";
+    
+    $info = $urlShortener->fetchEmbedInfo($originalUrl);
 }
 ?>
 
